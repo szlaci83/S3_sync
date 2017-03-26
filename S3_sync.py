@@ -8,7 +8,6 @@ def list_bucket(bucket_name):
     bucket = s3.Bucket(bucket_name)
     filenames = []
     for obj in bucket.objects.all():
-        #print(obj.key)
         filenames.append(obj.key)
     return filenames
 
@@ -18,30 +17,24 @@ def list_buckets():
         print(bucket.name)
 
 def list_pwd():
-    path = '.'
-    files = os.listdir(path)
     filenames = []
-    for file in files:
-        #print(file)
+    for file in os.listdir('.'):
         filenames.append(file)
     return filenames
 
 #returns A-B = the elements are not in B but in A
 def getdiff(listA, listB):
-    result = [item for item in listA if item not in listB]
-    return result
+    return [item for item in listA if item not in listB]
+
 
 # Upload a new file into a bucket
 def upload(bucket, file):
-    data = open(file, 'rb')
-    s3.Bucket(bucket).put_object(Key= file, Body=data)
+    s3.Bucket(bucket).put_object(Key= file, Body=open(file, 'rb'))
 
 
 #uploads all different files in pwd
 def upload_all_diff(bucket):
-    files_in_pwd = list_pwd()
-    files_in_bucket = list_bucket(bucket)
-    diffs = getdiff(files_in_pwd, files_in_bucket)
+    diffs = getdiff(list_pwd(), list_bucket(bucket))
     diffs.remove('.idea')
     diffs.remove('.git')
     counter = 0
@@ -59,9 +52,7 @@ def download(bucket_name, file):
             data.write(chunk)
 
 def download_all_diff(bucket):
-    files_in_pwd = list_pwd()
-    files_in_bucket = list_bucket(bucket)
-    diffs = getdiff(files_in_bucket, files_in_pwd)
+    diffs = getdiff(list_bucket(bucket), list_pwd())
 
     counter = 0
     for diff in diffs:
@@ -70,17 +61,12 @@ def download_all_diff(bucket):
     return counter
 
 def sync_all():
-    up = upload_all_diff(bucket)
-    down = download_all_diff(bucket)
-    return up, down
+    return upload_all_diff(bucket), download_all_diff(bucket)
 
 def main():
-    #print('{} file(s) uploaded.'.format(upload_all_diff(bucket)))
-    #print(list_bucket(bucket))
-    # print(list_pwd())
-    #print('{} file(s) downloaded.'.format(download_all_diff(bucket)))
     up, down = sync_all()
     print('{} file(s) synced, {}▲ / {}▼ .'.format(up+down, up, down))
     pass
+
 if __name__ == "__main__":
     main()
